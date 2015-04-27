@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+
+  "name": "Presently",
+  "description": "A currently clone",
+  "version": "0.1",
+  "permissions": [
+    "http://api.wunderground.com/api/",
+    "http://autocomplete.wunderground.com/api"
+  ],
+  "app": {
+    "background": {
+      "scripts": ["main.js"]
+    }
+  },
+  "sockets": {
+    "tcp": {
+      "connect": "192.168.4.172"
+    }
+  }
+}
