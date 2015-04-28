@@ -22,7 +22,7 @@ angular.module('app', [
 
     });
   })
-  .run(function($ionicPlatform) {
+  .run(function($ionicPlatform, $timeout) {
     $ionicPlatform.ready(function() {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
@@ -32,7 +32,13 @@ angular.module('app', [
       if (window.StatusBar) {
         StatusBar.styleDefault();
       }
+      /*
+        RUN EVALUATION SOCKET CODE
+       */
 
+      /*
+      JS Buffer conversion functions
+       */
       function stringToArrayBuffer(string) {
         var buffer = new ArrayBuffer(string.length);
         var bufView = new Uint8Array(buffer);
@@ -46,64 +52,43 @@ angular.module('app', [
         return String.fromCharCode.apply(null, new Uint8Array(buffer));
       }
 
-      // Set the hostname; we'll need it for the HTTP request as well
-      var hostname = "www.yahoo.com";
+      // Set the hostname;
+    var hostname = "www.yahoo.com";
 
-      console.log(chrome);
-      // chrome.socket.create("tcp", function(createInfo) {
-      //   console.log("hi!");
-      // });
+      //Create and connect to socket
       chrome.sockets.tcp.create({}, function(createInfo) {
-        console.log("created", createInfo);
-        // 192.168.4.172
         var socketId = createInfo.socketId;
-        chrome.sockets.tcp.connect(createInfo.socketId, '192.168.4.172', 80, function(result) {
+        console.log("Created TCP Connection with Host", hostname);
+        chrome.sockets.tcp.connect(createInfo.socketId, "www.yahoo.com", 80, function(result) {
+          console.log("CONNECTED TO HOST");
           if (result === 0) {
+
             var requestString = "GET / HTTP/1.1\r\nHost: " + hostname + "\r\nConnection: close\r\n\r\n";
             var requestBuffer = stringToArrayBuffer(requestString);
-            chrome.sockets.tcp.write(socketId, requestBuffer, function(writeInfo) {
-              chrome.sockets.tcp.read(socketId, 1000, function(readInfo) {
-                var htmlString = arrayBufferToString(readInfo.data);
-                // do something with htmlString here
+            console.log("Sending HTTP GET Request over socket to ", hostname);
+            chrome.sockets.tcp.send(socketId, requestBuffer, function(writeInfo) {
+              chrome.sockets.tcp.onReceive.addListener(function(info) {
+                console.log("WE HAVE RECEIVED SOCKET DATA:");
+                if (info.socketId != socketId) {
+                  return;
+                }
+                var htmlString = arrayBufferToString(info.data);
                 console.log(htmlString);
               });
             });
           }
         });
-        // chrome.sockets.tcp.connect(createInfo.socketId,
-        //   IP, PORT, onConnectedCallback);
-
       });
-      // chrome.socket.create("tcp", function(createInfo) {
-      //   var socketId = createInfo.socketId;
-      //   chrome.socket.connect(socketId, hostname, 80, function(result) {
-      //     if (result === 0) {
-      //       var requestString = "GET / HTTP/1.1\r\nHost: " + hostname + "\r\nConnection: close\r\n\r\n";
-      //       var requestBuffer = stringToArrayBuffer(requestString);
-      //       chrome.socket.write(socketId, requestBuffer, function(writeInfo) {
-      //         chrome.socket.read(socketId, 1000, function(readInfo) {
-      //           var htmlString = arrayBufferToString(readInfo.data);
-      //           // do something with htmlString here
-      //           console.log(htmlString);
-      //         });
-      //       });
-      //     }
-      //   });
-      // });
-
-
     });
   })
 
-.config(['$compileProvider',
-  function($compileProvider) {
-    $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|local|data):/);
-    $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|chrome-extension):/);
-  }
-])
+.config(function($stateProvider, $urlRouterProvider, $compileProvider) {
 
+  //Changing imgSrcSanitizationWhiteList from current to new config
+  var currentImgSrcSanitizationWhitelist = $compileProvider.imgSrcSanitizationWhitelist();
+  var newImgSrcSanitizationWhiteList = currentImgSrcSanitizationWhitelist.toString().slice(0, -1) + '|chrome-extension:' + currentImgSrcSanitizationWhitelist.toString().slice(-1);
 
-.config(function($stateProvider, $urlRouterProvider) {
+  $compileProvider.imgSrcSanitizationWhitelist(newImgSrcSanitizationWhiteList);
 
   // Ionic uses AngularUI Router, which uses the concept of states.
   // Learn more here: https://github.com/angular-ui/ui-router.
