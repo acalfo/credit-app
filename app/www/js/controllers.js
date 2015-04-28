@@ -4,7 +4,7 @@ angular.module('app.controllers', ['ionic', 'app.services'])
 /*
 Controller for the discover page
 */
-.controller('DiscoverCtrl', function($scope, $location, MyData) {
+.controller('DiscoverCtrl', function($scope, $location) {
 
 
 })

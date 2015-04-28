@@ -4,18 +4,10 @@
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
 angular.module('app', [
-    'ionic',
-    'app.controllers',
-    'app.services'
-  ])
-  //  CHANGE THIS TO OUR SERVER LATER
-  .factory('Server', function() {
-    // OUR SERVER INFO
-    return {
-      url: 'ws://echo.websocket.org',
-      port: 80
-    };
-  })
+  'ionic',
+  'app.controllers',
+  'app.services'
+])
 
 .run(function($ionicPlatform) {
     $ionicPlatform.ready(function() {
@@ -41,10 +33,59 @@ angular.module('app', [
       if (window.StatusBar) {
         StatusBar.styleDefault();
       }
-      /*
-        RUN EVALUATION SOCKET CODE
-       */
+    });
+  })
 
+.config(function($stateProvider, $urlRouterProvider, $compileProvider) {
+
+    //Changing imgSrcSanitizationWhiteList from current to new config
+    //This lets us render images w/ csrf restrictions enabled during local development.
+    var currentImgSrcSanitizationWhitelist = $compileProvider.imgSrcSanitizationWhitelist();
+    var newImgSrcSanitizationWhiteList = currentImgSrcSanitizationWhitelist.toString().slice(0, -1) + '|chrome-extension:' + currentImgSrcSanitizationWhitelist.toString().slice(-1);
+
+    $compileProvider.imgSrcSanitizationWhitelist(newImgSrcSanitizationWhiteList);
+
+    $stateProvider
+    // Set up an abstract state for the tabs directive:
+      .state('tab', {
+      url: '/tab',
+      abstract: true,
+      templateUrl: 'templates/tabs.html',
+      controller: 'TabsCtrl'
+    })
+
+    // Each tab has its own nav history stack:
+
+    .state('tab.discover', {
+      url: '/discover',
+      views: {
+        'tab-discover': {
+          templateUrl: 'templates/discover.html',
+          controller: 'DiscoverCtrl'
+        }
+      }
+    })
+
+    .state('tab.favorites', {
+      url: '/favorites',
+      views: {
+        'tab-favorites': {
+          templateUrl: 'templates/favorites.html',
+          controller: 'FavoritesCtrl'
+        }
+      }
+    });
+    // If none of the above states are matched, use this as the fallback:
+    $urlRouterProvider.otherwise('/tab/discover');
+
+  })
+  /*
+    RUN EVALUATION SOCKET CODE
+      Move in Service Later ~
+   */
+
+.run(function($ionicPlatform, $timeout, Server) {
+  $ionicPlatform.ready(function() {
     /*
     JS Buffer conversion functions
      */
@@ -64,76 +105,40 @@ angular.module('app', [
 
     //Create and connect to socket
     chrome.sockets.tcp.create({}, function(createInfo) {
-          var socketId = createInfo.socketId;
-          console.log("Created TCP Connection with Host", Server.url);
-          chrome.sockets.tcp.connect(createInfo.socketId, Server.url, 80, function(result) {
-            console.log("CONNECTED TO HOST");
-            if (result === 0) {
 
-              var requestString = "HTTP/1.1\r\nHost: " + Server.url + "\r\n 101 Web Socket Protocol Handshake\r\n\r\n";
-              var requestBuffer = stringToArrayBuffer(requestString);
-              console.log("Sending HTTP GET Request over socket to ", Server.url);
-              chrome.sockets.tcp.send(socketId, requestBuffer, function(writeInfo) {
-                chrome.sockets.tcp.onReceive.addListener(function(info) {
-                  console.log("WE HAVE RECEIVED SOCKET DATA:");
-                  if (info.socketId != socketId) {
-                    return;
-                  }
-                  var htmlString = arrayBufferToString(info.data);
-                  console.log(htmlString);
-                });
-              });
-            }
+      var socketId = createInfo.socketId;
+      console.log("Created TCP Connection with Host", Server.url);
+
+      chrome.sockets.tcp.connect(createInfo.socketId, Server.url, 80, function(result) {
+        console.log("CONNECTED TO HOST");
+
+        if (result === 0) {
+
+          var requestString = "HTTP/1.1\r\nHost: " + Server.url + "\r\n 101 Web Socket Protocol Handshake\r\n\r\n";
+          var requestBuffer = stringToArrayBuffer(requestString);
+
+          console.log("Sending HTTP GET Request over socket to ", Server.url);
+
+          //Send Something
+          chrome.sockets.tcp.send(socketId, requestBuffer, function(writeInfo) {
+
+            chrome.sockets.tcp.onReceive.addListener(function(info) {
+              console.log("WE HAVE RECEIVED SOCKET DATA:");
+              if (info.socketId != socketId) {
+                return;
+              }
+              var htmlString = arrayBufferToString(info.data);
+              console.log(htmlString);
+            });
           });
+        }
+
+        //Force Close on Timeout
+        $timeout(function() {
+          console.log("CLOSING SOCKET!");
+          chrome.sockets.tcp.close(socketId);
+        }, 1000);
       });
     });
-  })
-
-.config(function($stateProvider, $urlRouterProvider, $compileProvider) {
-
-  //Changing imgSrcSanitizationWhiteList from current to new config
-  var currentImgSrcSanitizationWhitelist = $compileProvider.imgSrcSanitizationWhitelist();
-  var newImgSrcSanitizationWhiteList = currentImgSrcSanitizationWhitelist.toString().slice(0, -1) + '|chrome-extension:' + currentImgSrcSanitizationWhitelist.toString().slice(-1);
-
-  $compileProvider.imgSrcSanitizationWhitelist(newImgSrcSanitizationWhiteList);
-
-  // Ionic uses AngularUI Router, which uses the concept of states.
-  // Learn more here: https://github.com/angular-ui/ui-router.
-  // Set up the various states in which the app can be.
-  // Each state's controller can be found in controllers.js.
-  $stateProvider
-
-
-  // Set up an abstract state for the tabs directive:
-    .state('tab', {
-    url: '/tab',
-    abstract: true,
-    templateUrl: 'templates/tabs.html',
-    controller: 'TabsCtrl'
-  })
-
-  // Each tab has its own nav history stack:
-
-  .state('tab.discover', {
-    url: '/discover',
-    views: {
-      'tab-discover': {
-        templateUrl: 'templates/discover.html',
-        controller: 'DiscoverCtrl'
-      }
-    }
-  })
-
-  .state('tab.favorites', {
-    url: '/favorites',
-    views: {
-      'tab-favorites': {
-        templateUrl: 'templates/favorites.html',
-        controller: 'FavoritesCtrl'
-      }
-    }
   });
-  // If none of the above states are matched, use this as the fallback:
-  $urlRouterProvider.otherwise('/tab/discover');
-
 });
