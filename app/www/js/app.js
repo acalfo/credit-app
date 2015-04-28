@@ -4,9 +4,18 @@
 // 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
 // the 2nd parameter is an array of 'requires'
 angular.module('app', [
-  'ionic',
-  'app.controllers'
-])
+    'ionic',
+    'app.controllers',
+    'app.services'
+  ])
+  //  CHANGE THIS TO OUR SERVER LATER
+  .factory('Server', function() {
+    // OUR SERVER INFO
+    return {
+      url: 'ws://echo.websocket.org',
+      port: 80
+    };
+  })
 
 .run(function($ionicPlatform) {
     $ionicPlatform.ready(function() {
@@ -22,7 +31,7 @@ angular.module('app', [
 
     });
   })
-  .run(function($ionicPlatform, $timeout) {
+  .run(function($ionicPlatform, $timeout, Server) {
     $ionicPlatform.ready(function() {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
@@ -36,48 +45,46 @@ angular.module('app', [
         RUN EVALUATION SOCKET CODE
        */
 
-      /*
-      JS Buffer conversion functions
-       */
-      function stringToArrayBuffer(string) {
-        var buffer = new ArrayBuffer(string.length);
-        var bufView = new Uint8Array(buffer);
-        for (var i = 0; i < string.length; i++) {
-          bufView[i] = string.charCodeAt(i);
-        }
-        return buffer;
+    /*
+    JS Buffer conversion functions
+     */
+    function stringToArrayBuffer(string) {
+      var buffer = new ArrayBuffer(string.length);
+      var bufView = new Uint8Array(buffer);
+      for (var i = 0; i < string.length; i++) {
+        bufView[i] = string.charCodeAt(i);
       }
+      return buffer;
+    }
 
-      function arrayBufferToString(buffer) {
-        return String.fromCharCode.apply(null, new Uint8Array(buffer));
-      }
+    function arrayBufferToString(buffer) {
+      return String.fromCharCode.apply(null, new Uint8Array(buffer));
+    }
 
-      // Set the hostname;
-    var hostname = "www.yahoo.com";
 
-      //Create and connect to socket
-      chrome.sockets.tcp.create({}, function(createInfo) {
-        var socketId = createInfo.socketId;
-        console.log("Created TCP Connection with Host", hostname);
-        chrome.sockets.tcp.connect(createInfo.socketId, "www.yahoo.com", 80, function(result) {
-          console.log("CONNECTED TO HOST");
-          if (result === 0) {
+    //Create and connect to socket
+    chrome.sockets.tcp.create({}, function(createInfo) {
+          var socketId = createInfo.socketId;
+          console.log("Created TCP Connection with Host", Server.url);
+          chrome.sockets.tcp.connect(createInfo.socketId, Server.url, 80, function(result) {
+            console.log("CONNECTED TO HOST");
+            if (result === 0) {
 
-            var requestString = "GET / HTTP/1.1\r\nHost: " + hostname + "\r\nConnection: close\r\n\r\n";
-            var requestBuffer = stringToArrayBuffer(requestString);
-            console.log("Sending HTTP GET Request over socket to ", hostname);
-            chrome.sockets.tcp.send(socketId, requestBuffer, function(writeInfo) {
-              chrome.sockets.tcp.onReceive.addListener(function(info) {
-                console.log("WE HAVE RECEIVED SOCKET DATA:");
-                if (info.socketId != socketId) {
-                  return;
-                }
-                var htmlString = arrayBufferToString(info.data);
-                console.log(htmlString);
+              var requestString = "HTTP/1.1\r\nHost: " + Server.url + "\r\n 101 Web Socket Protocol Handshake\r\n\r\n";
+              var requestBuffer = stringToArrayBuffer(requestString);
+              console.log("Sending HTTP GET Request over socket to ", Server.url);
+              chrome.sockets.tcp.send(socketId, requestBuffer, function(writeInfo) {
+                chrome.sockets.tcp.onReceive.addListener(function(info) {
+                  console.log("WE HAVE RECEIVED SOCKET DATA:");
+                  if (info.socketId != socketId) {
+                    return;
+                  }
+                  var htmlString = arrayBufferToString(info.data);
+                  console.log(htmlString);
+                });
               });
-            });
-          }
-        });
+            }
+          });
       });
     });
   })
@@ -129,13 +136,4 @@ angular.module('app', [
   // If none of the above states are matched, use this as the fallback:
   $urlRouterProvider.otherwise('/tab/discover');
 
-})
-
-//  CHANGE THIS TO OUR SERVER LATER
-.constant('SERVER', {
-  // Local server
-  //url: 'http://localhost:3000'
-
-  // Public Heroku server
-  url: 'https://ionic-songhop.herokuapp.com'
 });
