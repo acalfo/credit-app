@@ -55,28 +55,38 @@ angular.module('app', [
     })
 
     // Each tab has its own nav history stack:
-
-    .state('tab.discover', {
-      url: '/discover',
+    .state('tab.account', {
+      url: '/account',
       views: {
-        'tab-discover': {
-          templateUrl: 'templates/discover.html',
-          controller: 'DiscoverCtrl'
+        'tab-account': {
+          templateUrl: 'templates/account.html',
+          controller: 'AccountCtrl'
         }
       }
     })
 
-    .state('tab.favorites', {
-      url: '/favorites',
+
+    .state('tab.pay', {
+      url: '/pay',
       views: {
-        'tab-favorites': {
-          templateUrl: 'templates/favorites.html',
-          controller: 'FavoritesCtrl'
+        'tab-pay': {
+          templateUrl: 'templates/pay.html',
+          controller: 'PayCtrl'
+        }
+      }
+    })
+
+    .state('tab.receive', {
+      url: '/receive',
+      views: {
+        'tab-receive': {
+          templateUrl: 'templates/receive.html',
+          controller: 'ReceiveCtrl'
         }
       }
     });
     // If none of the above states are matched, use this as the fallback:
-    $urlRouterProvider.otherwise('/tab/discover');
+    $urlRouterProvider.otherwise('/tab/account');
 
   })
   /*

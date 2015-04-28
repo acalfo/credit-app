@@ -1,10 +1,16 @@
 angular.module('app.controllers', ['ionic', 'app.services'])
 
+/*
+Controller for the accounts page
+*/
+.controller('AccountCtrl', function($scope) {
+
+})
 
 /*
 Controller for the discover page
 */
-.controller('DiscoverCtrl', function($scope, $location) {
+.controller('PayCtrl', function($scope, $location) {
 
 
 })
@@ -13,7 +19,7 @@ Controller for the discover page
 /*
 Controller for the favorites page
 */
-.controller('FavoritesCtrl', function($scope) {
+.controller('ReceiveCtrl', function($scope) {
 
 })
 
