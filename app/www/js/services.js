@@ -9,7 +9,3 @@ angular.module('app.services', [])
   };
 })
 
-//Socket Wrapper
-.factory('Socket', function() {
-
-});
