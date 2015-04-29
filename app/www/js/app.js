@@ -119,12 +119,12 @@ angular.module('app', [
       var socketId = createInfo.socketId;
       console.log("Created TCP Connection with Host", Server.url);
 
-      chrome.sockets.tcp.connect(createInfo.socketId, Server.url, 80, function(result) {
+      chrome.sockets.tcp.connect(createInfo.socketId, Server.url, Server.port, function(result) {
         console.log("CONNECTED TO HOST");
 
         if (result === 0) {
 
-          var requestString = "HTTP/1.1\r\nHost: " + Server.url + "\r\n 101 Web Socket Protocol Handshake\r\n\r\n";
+          var requestString = "GET / HTTP/1.1\r\nHost: echo.websocket.org\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nOrigin: websocket.org\r\nSec-WebSocket-Protocol: chat, superchat\r\nSec-WebSocket-Version: 13\r\n\r\n ELLO PUPPET";
           var requestBuffer = stringToArrayBuffer(requestString);
 
           console.log("Sending HTTP GET Request over socket to ", Server.url);
@@ -139,6 +139,7 @@ angular.module('app', [
               }
               var htmlString = arrayBufferToString(info.data);
               console.log(htmlString);
+
             });
           });
         }
